@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Custodian Dashboard - Laboratory Equipment Borrowing System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h2>Welcome, Laboratory Custodian</h2>
+    <p>This is the custodian dashboard. More features will be added in future steps.</p>
+    
+    <div class="dashboard-actions">
+        <a href="#" class="btn">Inventory Management</a>
+        <a href="#" class="btn">Request Approvals</a>
+        <a href="#" class="btn">Borrowing Tracking</a>
+    </div>
+    
+    <div class="logout-container">
+        <a href="{{ url_for('logout') }}" class="btn btn-gold">Logout</a>
+    </div>
+</div>
+{% endblock %}

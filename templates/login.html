@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Laboratory Equipment Borrowing System{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <h2>Welcome to Laboratory Borrowing Portal</h2>
+        <p>Please sign in to continue</p>
+        
+        <a href="{{ url_for('login_with_google') }}" class="google-btn">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google Logo">
+            Sign in with Google
+        </a>
+        
+        {% if error %}
+        <p class="error-message">{{ error }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

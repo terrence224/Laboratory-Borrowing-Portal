@@ -1,0 +1,224 @@
+:root {
+    --primary-blue: #1a4b84;
+    --secondary-blue: #3a6ea5;
+    --light-blue: #c6def1;
+    --gold: #ffd700;
+    --light-gold: #ffe866;
+    --dark-gold: #cca900;
+    --white: #ffffff;
+    --light-gray: #f5f5f5;
+    --dark-gray: #333333;
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--light-gray);
+    color: var(--dark-gray);
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  /* Header Styles */
+  header {
+    background-color: var(--primary-blue);
+    color: var(--white);
+    padding: 15px 0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  
+  header h1 {
+    margin: 0;
+    padding: 0 20px;
+  }
+  
+  /* Login Page Styles */
+  .login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 80vh;
+  }
+  
+  .login-card {
+    background: var(--white);
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    padding: 30px;
+    width: 400px;
+    max-width: 90%;
+    text-align: center;
+    border-top: 5px solid var(--gold);
+  }
+  
+  .login-card h2 {
+    color: var(--primary-blue);
+    margin-bottom: 20px;
+  }
+  
+  .login-card p {
+    color: var(--dark-gray);
+    margin-bottom: 30px;
+  }
+  
+  .btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: var(--primary-blue);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    text-decoration: none;
+    transition: background-color 0.3s;
+    margin: 5px;
+  }
+  
+  .btn:hover {
+    background-color: var(--secondary-blue);
+  }
+  
+  .btn-gold {
+    background-color: var(--gold);
+    color: var(--dark-gray);
+  }
+  
+  .btn-gold:hover {
+    background-color: var(--dark-gold);
+  }
+  
+  .google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--white);
+    color: var(--dark-gray);
+    border: 1px solid #ddd;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 0 auto;
+    width: 80%;
+    transition: background-color 0.3s;
+  }
+  
+  .google-btn:hover {
+    background-color: #f5f5f5;
+  }
+  
+  .google-btn img {
+    margin-right: 10px;
+    width: 20px;
+    height: 20px;
+  }
+  
+  /* Dashboard Styles */
+  .dashboard-container {
+    background: var(--white);
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    padding: 30px;
+    margin-top: 20px;
+    border-top: 5px solid var(--gold);
+  }
+  
+  .dashboard-container h2 {
+    color: var(--primary-blue);
+    margin-bottom: 20px;
+  }
+  
+  .dashboard-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 30px 0;
+  }
+  
+  .logout-container {
+    text-align: center;
+    margin-top: 40px;
+  }
+  
+  /* Error Page Styles */
+  .error-container {
+    background: var(--white);
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    padding: 30px;
+    margin-top: 20px;
+    text-align: center;
+    border-top: 5px solid #ff4444;
+  }
+  
+  .error-container h2 {
+    color: #ff4444;
+    margin-bottom: 20px;
+  }
+  
+  /* Notification Styles */
+  .notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 4px;
+    background-color: var(--light-blue);
+    color: var(--primary-blue);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transform: translateX(120%);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+  }
+  
+  .notification.show {
+    transform: translateX(0);
+  }
+  
+  .notification.error {
+    background-color: #ffebee;
+    color: #c62828;
+  }
+  
+  .notification.success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  }
+  
+  /* Footer Styles */
+  footer {
+    background-color: var(--primary-blue);
+    color: var(--white);
+    text-align: center;
+    padding: 15px 0;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+  }
+  
+  /* Responsive styles */
+  @media (max-width: 768px) {
+    .login-card {
+      width: 90%;
+      padding: 20px;
+    }
+    
+    .dashboard-actions {
+      flex-direction: column;
+    }
+    
+    .dashboard-actions .btn {
+      width: 100%;
+      margin: 5px 0;
+    }
+  }

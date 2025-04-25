@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Borrower Dashboard - Laboratory Equipment Borrowing System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h2>Welcome, {{ session.user.given_name }}</h2>
+    <p>This is the borrower dashboard. More features will be added in future steps.</p>
+    
+    <div class="dashboard-actions">
+        <a href="#" class="btn">View Available Equipment</a>
+        <a href="#" class="btn">My Borrowing History</a>
+    </div>
+    
+    <div class="logout-container">
+        <a href="{{ url_for('logout') }}" class="btn btn-gold">Logout</a>
+    </div>
+</div>
+{% endblock %}
