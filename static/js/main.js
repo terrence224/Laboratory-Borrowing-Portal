@@ -314,7 +314,21 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.category-section').forEach(function(section) {
+    var title = section.querySelector('.category-title');
+    var content = section.querySelector('.items-grid') || section.querySelector('.no-items-message');
+    title.addEventListener('click', function() {
+      if (content.style.display === 'none') {
+        content.style.display = '';
+        title.querySelector('.toggle-icon').textContent = '▼';
+      } else {
+        content.style.display = 'none';
+        title.querySelector('.toggle-icon').textContent = '►';
+      }
+    });
+  });
+});
 
 
 
