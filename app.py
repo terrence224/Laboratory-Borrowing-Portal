@@ -108,7 +108,7 @@ def custodian_dashboard():
 
 @app.route('/borrower/items_display')
 @login_required
-def borrower_items():
+def borrower_items_display():
     try:
         # Fetch categories and items from Supabase
         categories_response = supabase.table('categories').select('*').execute()
@@ -131,7 +131,7 @@ def borrower_items():
                     item['category'] = category_name  # Add category name to the item
                     items_by_category[category_id].append(item)
         
-        return render_template('borrower/items/display.html', 
+        return render_template('borrower/items_display.html', 
                                categories=categories, 
                                items_by_category=items_by_category)
     

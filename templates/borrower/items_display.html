@@ -29,10 +29,10 @@
               <div class="item-card" data-item-id="{{ item.id }}" data-item-name="{{ item.name }}">
                 <!-- Item Image -->
                 <div class="item-image-container">
-                  <img id="img-{{ item.id }}" class="item-image" 
-                       src="{{ url_for('static', filename='img/' + item.category.lower() + 's/' + item.image_basename + '.jpg') }}" 
-                       onerror="this.onerror=null; tryNextImageFormat(this, '{{ item.image_basename }}', '{{ item.category }}');" 
-                       alt="{{ item.name }}">
+                    <img id="img-{{ item.id }}" class="item-image"
+                    src="{{ url_for('static', filename='img/' + item.category.lower() + '/' + item.image_basename + '.jpg') }}"
+                    onerror="this.onerror=null; tryNextImageFormat(this, '{{ item.image_basename }}', '{{ item.category }}');"
+                    alt="{{ item.name }}">
                 </div>
                 
                 <div class="item-name">{{ item.name }}</div>
@@ -98,5 +98,4 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- The main.js file should be included in the base template or here -->
 {% endblock %}

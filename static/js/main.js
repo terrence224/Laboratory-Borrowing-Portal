@@ -62,40 +62,49 @@ function showNotification(message, type = 'info') {
 
 // Try different image formats based on item category
 function tryNextImageFormat(imgElement, basename, category) {
-  // Try different file extensions
-  const extensions = ['jpg', 'png', 'jfif', 'jpeg', 'gif'];
-  let currentSrc = imgElement.src;
+  // Try these extensions in order
+  const extensions = ['jpg', 'jpeg', 'png', 'jfif', 'gif'];
   
-  // Find the current extension being tried
-  let currentExtIndex = -1;
-  for (let i = 0; i < extensions.length; i++) {
-    if (currentSrc.endsWith(basename + '.' + extensions[i])) {
-      currentExtIndex = i;
-      break;
+  // Extract current extension from src
+  const currentSrc = imgElement.src;
+  const currentExt = currentSrc.split('.').pop().toLowerCase();
+  
+  // Find index of current extension
+  let currentExtIndex = extensions.indexOf(currentExt);
+  if (currentExtIndex === -1) currentExtIndex = -1; // If not found, start from beginning
+  
+  // Get the appropriate folder
+  let folder = category.toLowerCase();
+  
+  // Try each extension systematically
+  let attempted = 0;
+  const tryNextExt = function() {
+    attempted++;
+    if (attempted >= extensions.length) {
+      // We've tried all extensions, show placeholder
+      const container = imgElement.parentElement;
+      container.innerHTML = `<div class="image-placeholder">
+        <i>📷</i>
+      </div>`;
+      console.log(`Failed to load image ${basename} with any extension`);
+      return;
     }
-  }
+    
+    // Calculate next extension index
+    const nextIndex = (currentExtIndex + attempted) % extensions.length;
+    const nextExt = extensions[nextIndex];
+    
+    // Try loading with this extension
+    console.log(`Trying ${basename}.${nextExt}`);
+    imgElement.src = `/static/img/${folder}/${basename}.${nextExt}`;
+    imgElement.onerror = function() {
+      this.onerror = null;
+      tryNextExt();
+    };
+  };
   
-  // Get the appropriate folder based on category
-  let folder = 'equipment'; // default
-  if (category) {
-    // Convert to lowercase and make singular for folder name
-    let categoryFolder = category.toLowerCase();
-    if (categoryFolder.endsWith('s')) {
-      categoryFolder = categoryFolder.slice(0, -1);
-    }
-    folder = categoryFolder + 's'; // Add back plural for folder name
-  }
-  
-  // Try the next extension
-  if (currentExtIndex < extensions.length - 1) {
-    imgElement.src = `/static/img/${folder}/${basename}.${extensions[currentExtIndex + 1]}`;
-  } else {
-    // No image found, show placeholder
-    const container = imgElement.parentElement;
-    container.innerHTML = `<div class="image-placeholder">
-      <i>📷</i>
-    </div>`;
-  }
+  // Start trying extensions
+  tryNextExt();
 }
 
 // Quantity selector functions
