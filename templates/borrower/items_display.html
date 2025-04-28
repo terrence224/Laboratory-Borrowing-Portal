@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Available Items - Laboratory Borrowing System{% endblock %}
+
+{% block head %}
+<!-- Any additional head elements can go here -->
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+  <h2>Available Items</h2>
+  <p>Browse available laboratory items to borrow. Add items to your cart and proceed to complete your borrowing request.</p>
+
+  <!-- Search Bar -->
+  <div class="search-bar">
+    <input type="text" id="search-input" placeholder="Search for equipment..." oninput="searchItems()">
+    <button class="btn" onclick="clearSearch()">Clear</button>
+  </div>
+
+  <!-- Equipment Categories and Items -->
+  <div id="items-container">
+    {% for category in categories %}
+      <div class="category-section" data-category-id="{{ category.id }}">
+        <h3 class="category-title">{{ category.name }}</h3>
+        
+        {% if items_by_category[category.id]|length > 0 %}
+          <div class="items-grid">
+            {% for item in items_by_category[category.id] %}
+              <div class="item-card" data-item-id="{{ item.id }}" data-item-name="{{ item.name }}">
+                <!-- Item Image -->
+                <div class="item-image-container">
+                  <img id="img-{{ item.id }}" class="item-image" 
+                       src="{{ url_for('static', filename='img/' + item.category.lower() + 's/' + item.image_basename + '.jpg') }}" 
+                       onerror="this.onerror=null; tryNextImageFormat(this, '{{ item.image_basename }}', '{{ item.category }}');" 
+                       alt="{{ item.name }}">
+                </div>
+                
+                <div class="item-name">{{ item.name }}</div>
+                
+                {% if item.status == 'available' %}
+                  <div class="item-status status-available">Available</div>
+                {% elif item.status == 'unavailable' %}
+                  <div class="item-status status-unavailable">Unavailable</div>
+                {% else %}
+                  <div class="item-status status-maintenance">Under Maintenance</div>
+                {% endif %}
+                
+                <div class="item-quantity">
+                  Available: <strong>{{ item.available_quantity }}</strong> / Total: {{ item.total_quantity }}
+                </div>
+                
+                <div class="item-actions">
+                  <div class="quantity-selector">
+                    <button onclick="decrementQuantity('{{ item.id }}')">-</button>
+                    <input type="number" id="quantity-{{ item.id }}" min="1" max="{{ item.available_quantity }}" value="1" readonly>
+                    <button onclick="incrementQuantity('{{ item.id }}', {{ item.available_quantity }})">+</button>
+                  </div>
+                  
+                  <button class="add-to-cart" 
+                          onclick="addToCart('{{ item.id }}', '{{ item.name }}', {{ item.available_quantity }})"
+                          {% if item.status != 'available' or item.available_quantity < 1 %}disabled{% endif %}>
+                    Add to Cart
+                  </button>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="no-items-message">No items available in this category</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Borrowing Cart -->
+  <div class="cart-preview" id="borrowing-cart">
+    <div class="cart-header">
+      <div class="cart-title">Borrowing Cart (<span id="cart-count">0</span>)</div>
+      <button class="cart-toggle" id="toggle-cart">▲</button>
+    </div>
+    
+    <div id="cart-content">
+      <div class="cart-items" id="cart-items-container">
+        <p class="no-items-message">Your cart is empty</p>
+      </div>
+      
+      <div class="cart-actions">
+        <button class="empty-cart" onclick="emptyCart()">Empty Cart</button>
+        <button class="proceed-button" onclick="proceedToBorrow()" id="proceed-button" disabled>Proceed</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="logout-container">
+    <a href="{{ url_for('borrower_dashboard') }}" class="btn">Back to Dashboard</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- The main.js file should be included in the base template or here -->
+{% endblock %}

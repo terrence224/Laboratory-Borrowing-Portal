@@ -106,6 +106,39 @@ def custodian_dashboard():
     # For now, just render a placeholder page
     return render_template('custodian/dashboard.html')
 
+@app.route('/borrower/items_display')
+@login_required
+def borrower_items():
+    try:
+        # Fetch categories and items from Supabase
+        categories_response = supabase.table('categories').select('*').execute()
+        items_response = supabase.table('items').select('*').execute()
+        
+        categories = categories_response.data
+        items = items_response.data
+        
+        # Group items by category for easier rendering
+        items_by_category = {}
+        for category in categories:
+            category_id = category['id']
+            category_name = category['name']  # Get the category name
+            items_by_category[category_id] = []
+            
+            for item in items:
+                if item['category_id'] == category_id:
+                    # Add image path - we'll check multiple extensions in the template
+                    item['image_basename'] = item['name'].lower().replace(' ', '_')
+                    item['category'] = category_name  # Add category name to the item
+                    items_by_category[category_id].append(item)
+        
+        return render_template('borrower/items/display.html', 
+                               categories=categories, 
+                               items_by_category=items_by_category)
+    
+    except Exception as e:
+        print(f"Error fetching items: {e}")
+        return render_template('error.html', error='Unable to fetch items at this time')
+
 # Error handlers
 @app.errorhandler(404)
 def page_not_found(e):
