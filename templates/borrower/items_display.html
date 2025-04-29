@@ -105,6 +105,75 @@
     <a href="{{ url_for('borrower_dashboard') }}" class="btn">Back to Dashboard</a>
   </div>
 </div>
+
+<!-- templates/borrow_modal.html -->
+<div id="borrower-form-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Complete Borrowing Information</h2>
+      <span class="close-modal">&times;</span>
+    </div>
+    <div class="modal-body">
+      <form id="borrower-form">
+        <div class="form-group">
+          <label>Laboratory:</label>
+          <div class="laboratory-options">
+            <label><input type="radio" name="laboratory" value="Electronics" required> Electronics</label>
+            <label><input type="radio" name="laboratory" value="Science"> Science</label>
+            <label><input type="radio" name="laboratory" value="Nursing"> Nursing</label>
+            <label><input type="radio" name="laboratory" value="HTM"> HTM</label>
+            <label><input type="radio" name="laboratory" value="Criminology"> Criminology</label>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="borrower_name">Name of Student:</label>
+          <input type="text" id="borrower_name" name="borrower_name" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="faculty_name">Name of Faculty:</label>
+          <input type="text" id="faculty_name" name="faculty_name" required>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group half">
+            <label for="subject">Subject:</label>
+            <input type="text" id="subject" name="subject" required>
+          </div>
+          
+          <div class="form-group half">
+            <label for="section">Section:</label>
+            <input type="text" id="section" name="section" required>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group half">
+            <label for="date_filed">Date Filed:</label>
+            <input type="date" id="date_filed" name="date_filed" readonly required>
+          </div>
+          
+          <div class="form-group half">
+            <label for="date_needed">Date/Time Needed:</label>
+            <input type="datetime-local" id="date_needed" name="date_needed" required>
+          </div>
+        </div>
+        
+        <div class="cart-summary">
+          <h3>Items to Borrow</h3>
+          <div id="modal-cart-items"></div>
+        </div>
+        
+        <div class="form-actions">
+          <button type="button" class="btn" id="cancel-form">Cancel</button>
+          <button type="submit" class="btn btn-gold">Submit Request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}

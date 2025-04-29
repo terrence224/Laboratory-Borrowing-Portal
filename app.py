@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, session, request
+from flask import Flask, render_template, redirect, url_for, session, request, jsonify, make_response
 from authlib.integrations.flask_client import OAuth
 import requests
 import json
@@ -138,6 +138,88 @@ def borrower_items_display():
     except Exception as e:
         print(f"Error fetching items: {e}")
         return render_template('error.html', error='Unable to fetch items at this time')
+
+
+
+# Add this route to your app.py file
+
+@app.route('/submit_borrowing_request', methods=['POST'])
+@login_required
+def submit_borrowing_request():
+    try:
+        # 1) Extract required form fields
+        laboratory    = request.form.get('laboratory')
+        borrower_name = request.form.get('borrower_name')
+        faculty_name  = request.form.get('faculty_name')
+        subject       = request.form.get('subject')
+        section       = request.form.get('section')
+        date_filed    = request.form.get('date_filed')
+        date_needed   = request.form.get('date_needed')
+
+        # 2) Validate presence of each
+        for field, val in [
+            ('laboratory', laboratory),
+            ('borrower_name', borrower_name),
+            ('faculty_name', faculty_name),
+            ('subject', subject),
+            ('section', section),
+            ('date_filed', date_filed),
+            ('date_needed', date_needed),
+        ]:
+            if not val:
+                return jsonify({
+                    'success': False,
+                    'message': f'Missing required field: {field}'
+                }), 400
+
+        # 3) Parse cart items JSON
+        items_json = request.form.get('items')
+        if not items_json:
+            return jsonify({'success': False, 'message': 'No items provided'}), 400
+        items = json.loads(items_json)
+
+        # 4) Build the borrowing_request record
+        borrowing_data = {
+            'laboratory':    laboratory,
+            'borrower_name': borrower_name,
+            'faculty_name':  faculty_name,
+            'subject':       subject,
+            'section':       section,
+            'date_filed':    date_filed,
+            'date_needed':   date_needed,
+            'status':        'pending'
+        }
+
+        # 5) Insert the borrowing request, catching any Supabase/API errors
+        try:
+            resp = supabase.table('borrowing_requests') \
+                           .insert(borrowing_data) \
+                           .execute()
+            borrowing_id = resp.data[0]['id']
+        except APIError as e:
+            app.logger.error('Supabase insert failed: %s', e)
+            return jsonify({'success': False, 'message': str(e)}), 400
+
+        # 6) Insert each item in borrowing_items
+        for item in items:
+            supabase.table('borrowing_items') \
+                    .insert({
+                        'borrowing_id': borrowing_id,
+                        'item_id':      item['id'],
+                        'quantity':     item['quantity']
+                    }) \
+                    .execute()
+
+        # 7) Return success JSON
+        return jsonify({
+            'success':      True,
+            'message':      'Borrowing request submitted successfully!',
+            'borrowing_id': borrowing_id
+        }), 200
+
+    except Exception as e:
+        app.logger.exception('Unhandled error in submit_borrowing_request')
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 # Error handlers
 @app.errorhandler(404)

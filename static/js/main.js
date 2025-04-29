@@ -333,3 +333,119 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
+
+// Function to format a Date object as YYYY-MM-DD
+function formatDate(date) {
+  const day   = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year  = date.getFullYear();
+  return `${year}-${month}-${day}`;
+}
+
+// Open modal, set dates, and show cart items
+function proceedToBorrow() {
+  if (borrowingCart.length === 0) {
+    showNotification('Your cart is empty', 'error');
+    return;
+  }
+
+  const modal = document.getElementById('borrower-form-modal');
+  modal.style.display = 'block';
+
+  // Populate Date Filed
+  const currentDate = new Date();
+  document.getElementById('date_filed').value = formatDate(currentDate);
+
+  // Set minimum for Date Needed
+  const dateNeededInput = document.getElementById('date_needed');
+  dateNeededInput.min = currentDate.toISOString().slice(0, 16);
+
+  displayCartInModal();
+}
+
+// Render cart items inside the modal
+function displayCartInModal() {
+  const container = document.getElementById('modal-cart-items');
+  container.innerHTML = '';
+
+  if (borrowingCart.length === 0) {
+    container.innerHTML = '<p>No items in cart</p>';
+    return;
+  }
+
+  borrowingCart.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'modal-cart-item';
+    div.innerHTML = `
+      <div>${item.name}</div>
+      <div>Quantity: ${item.quantity}</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const modal    = document.getElementById('borrower-form-modal');
+  const closeBtn = document.querySelector('.close-modal');
+  const cancelBtn= document.getElementById('cancel-form');
+  const form     = document.getElementById('borrower-form');
+
+  // Close modal handlers
+  closeBtn?.addEventListener('click', () => modal.style.display = 'none');
+  cancelBtn?.addEventListener('click', () => modal.style.display = 'none');
+  window.addEventListener('click', e => {
+    if (e.target === modal) modal.style.display = 'none';
+  });
+
+  // Form submission
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Processing...';
+    submitBtn.disabled = true;
+
+    try {
+      const formData = new FormData(form);
+      formData.append('items', JSON.stringify(borrowingCart));
+
+      // include session cookie & ask explicitly for JSON
+      const resp = await fetch('/submit_borrowing_request', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Accept': 'application/json' },
+        body: formData
+       });
+
+      // parse JSON (and catch if server accidentally sent HTML)
+      let result;
+      try {
+        result = await resp.json();
+      } catch {
+        throw new Error('Server returned invalid JSON.');
+      }
+
+       // check for HTTP errors
+      if (!resp.ok) {
+        throw new Error(result.message || 'Server error occurred');
+      }
+       // check for application‐level errors
+      if (!result.success) {
+        throw new Error(result.message);
+      }
+      showNotification(result.message, 'success');
+      borrowingCart = [];
+      updateCartUI();
+      saveCartToSession();
+      modal.style.display = 'none';
+
+    } catch (err) {
+      console.error('Error:', err);
+      showNotification(err.message, 'error');
+    } finally {
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+    }
+  });
+});
