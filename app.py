@@ -75,7 +75,7 @@ def authorize():
         
         # For simplicity, let's determine user type based on email domain
         # In a real application, you would check against your database
-        if email.endswith('@custodian.example.com'):
+        if email.endswith('@gmail.com'):
             session['user_type'] = 'custodian'
             return redirect(url_for('custodian_dashboard'))
         else:

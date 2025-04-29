@@ -27,6 +27,7 @@
     margin: 0 auto;
     padding: 20px;
   }
+
   
   /* Header Styles */
   header {
@@ -41,6 +42,13 @@
     padding: 0 20px;
   }
   
+  header .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 10px;
+  }
+  
+
   /* Login Page Styles */
   .login-container {
     display: flex;
@@ -130,7 +138,6 @@
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     padding: 30px;
     margin-top: 20px;
-    margin-bottom: 30px;
     border-top: 5px solid var(--gold);
   }
   
@@ -389,7 +396,6 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
   }
 
   .cart-title {
