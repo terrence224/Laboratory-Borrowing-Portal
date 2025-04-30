@@ -772,3 +772,51 @@ table.items-table th {
     margin-bottom: 8px;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+/* Make the table container a positioning context */
+#items-table-container {
+  position: relative;
+}
+
+/* Signature overlay styling */
+.signature-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* Initial size (user can resize further) */
+  width: 150px;
+  height: 100px;
+  /* Dashed border or background for visual handle */
+  border: 2px dashed #888;
+  background: rgba(255,255,255,0.5); /* semi-transparent to see table underneath (optional) */
+  /* Allow user to resize */
+  resize: both;
+  overflow: auto;
+  /* Show move/drag cursor */
+  cursor: grab;
+  z-index: 5;
+}
+
+/* When dragging, change the cursor */
+.signature-overlay.dragging {
+  cursor: grabbing;
+}
+
+/* Make the signature image fill its container */
+#signature-overlay img {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none; /* Image itself shouldn’t intercept drag events */
+  user-select: none;
+}
