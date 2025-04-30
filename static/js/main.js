@@ -348,98 +348,152 @@ function proceedToBorrow() {
     showNotification('Your cart is empty', 'error');
     return;
   }
-
+  
   const modal = document.getElementById('borrower-form-modal');
   modal.style.display = 'block';
-
-  // Populate Date Filed
+  
+  // Populate Date Filed with current date
   const currentDate = new Date();
   document.getElementById('date_filed').value = formatDate(currentDate);
-
+  
   // Set minimum for Date Needed
   const dateNeededInput = document.getElementById('date_needed');
   dateNeededInput.min = currentDate.toISOString().slice(0, 16);
-
+  
+  // Display cart items in the table
   displayCartInModal();
 }
 
-// Render cart items inside the modal
+// Render cart items inside the items table in the modal
 function displayCartInModal() {
-  const container = document.getElementById('modal-cart-items');
-  container.innerHTML = '';
-
+  const tableBody = document.getElementById('items-table-body');
+  tableBody.innerHTML = '';
+  
   if (borrowingCart.length === 0) {
-    container.innerHTML = '<p>No items in cart</p>';
+    const row = document.createElement('tr');
+    row.innerHTML = '<td colspan="11">No items in cart</td>';
+    tableBody.appendChild(row);
     return;
   }
-
+  
+  // Create rows for each item in the cart
   borrowingCart.forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'modal-cart-item';
-    div.innerHTML = `
-      <div>${item.name}</div>
-      <div>Quantity: ${item.quantity}</div>
+    const row = document.createElement('tr');
+    
+    // Create cells according to the table structure in the HTML
+    // Item | Quantity | Student | Faculty | Custodian | Date | Time | Broken | Lost | Quantity | Remarks
+    row.innerHTML = `
+      <td style="text-align: left; padding-left: 10px;">${item.name}</td>
+      <td style="text-align: center;">${item.quantity}</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
     `;
-    container.appendChild(div);
+    
+    tableBody.appendChild(row);
   });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const modal    = document.getElementById('borrower-form-modal');
-  const closeBtn = document.querySelector('.close-modal');
-  const cancelBtn= document.getElementById('cancel-form');
-  const form     = document.getElementById('borrower-form');
-
-  // Close modal handlers
-  closeBtn?.addEventListener('click', () => modal.style.display = 'none');
+  const modal = document.getElementById('borrower-form-modal');
+  const cancelBtn = document.getElementById('cancel-form');
+  const submitBtn = document.getElementById('submit-form');
+  const form = document.getElementById('borrower-form');
+  
+  // Close modal handler
   cancelBtn?.addEventListener('click', () => modal.style.display = 'none');
+  
   window.addEventListener('click', e => {
     if (e.target === modal) modal.style.display = 'none';
   });
-
+  
   // Form submission
-  form?.addEventListener('submit', async (e) => {
+  submitBtn?.addEventListener('click', async (e) => {
     e.preventDefault();
-
-    const submitBtn = form.querySelector('button[type="submit"]');
+    
+    // Basic form validation
+    const laboratory = document.querySelector('input[name="laboratory"]:checked');
+    const studentName = document.getElementById('student_name').value;
+    const subject = document.getElementById('subject').value;
+    const section = document.getElementById('section').value;
+    const dateNeeded = document.getElementById('date_needed').value;
+    
+    // Check required fields
+    if (!laboratory) {
+      showNotification('Please select a laboratory', 'error');
+      return;
+    }
+    
+    if (!studentName) {
+      showNotification('Please enter student name', 'error');
+      return;
+    }
+    
+    if (!subject) {
+      showNotification('Please enter subject', 'error');
+      return;
+    }
+    
+    if (!section) {
+      showNotification('Please enter section', 'error');
+      return;
+    }
+    
+    if (!dateNeeded) {
+      showNotification('Please enter date/time needed', 'error');
+      return;
+    }
+    
     const originalText = submitBtn.textContent;
     submitBtn.textContent = 'Processing...';
     submitBtn.disabled = true;
-
+    
     try {
       const formData = new FormData(form);
+      
+      // Add borrower_name to match backend expectation
+      formData.append('borrower_name', studentName);
+      
+      // Add cart items to form data
       formData.append('items', JSON.stringify(borrowingCart));
-
-      // include session cookie & ask explicitly for JSON
+      
+      // Include session cookie & ask explicitly for JSON
       const resp = await fetch('/submit_borrowing_request', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Accept': 'application/json' },
         body: formData
-       });
-
-      // parse JSON (and catch if server accidentally sent HTML)
+      });
+      
+      // Parse JSON (and catch if server accidentally sent HTML)
       let result;
       try {
         result = await resp.json();
       } catch {
         throw new Error('Server returned invalid JSON.');
       }
-
-       // check for HTTP errors
+      
+      // Check for HTTP errors
       if (!resp.ok) {
         throw new Error(result.message || 'Server error occurred');
       }
-       // check for application‐level errors
+      
+      // Check for application‐level errors
       if (!result.success) {
         throw new Error(result.message);
       }
+      
       showNotification(result.message, 'success');
       borrowingCart = [];
       updateCartUI();
       saveCartToSession();
       modal.style.display = 'none';
-
     } catch (err) {
       console.error('Error:', err);
       showNotification(err.message, 'error');
