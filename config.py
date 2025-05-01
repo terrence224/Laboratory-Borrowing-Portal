@@ -14,3 +14,7 @@ SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
 # Flask Configuration
 SECRET_KEY = os.getenv('SECRET_KEY', 'dev-key-for-testing')
+
+ALLOWED_CUSTODIAN_EMAILS = {
+    'terrence.pozon12@gmail.com'
+}

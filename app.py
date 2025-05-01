@@ -75,7 +75,7 @@ def authorize():
         
         # For simplicity, let's determine user type based on email domain
         # In a real application, you would check against your database
-        if email.endswith('@gmail.com'):
+        if email in config.ALLOWED_CUSTODIAN_EMAILS:
             session['user_type'] = 'custodian'
             return redirect(url_for('custodian_dashboard'))
         else:
@@ -112,8 +112,13 @@ def borrower_items_display():
     try:
         # Fetch categories and items from Supabase
         categories_response = supabase.table('categories').select('*').execute()
-        items_response = supabase.table('items').select('*').execute()
-        
+        items_response = (
+            supabase
+            .table('items')
+            .select('*')
+            .order('name', desc=False)   # specify ascending order
+            .execute()
+        )        
         categories = categories_response.data
         items = items_response.data
         
@@ -220,6 +225,113 @@ def submit_borrowing_request():
     except Exception as e:
         app.logger.exception('Unhandled error in submit_borrowing_request')
         return jsonify({'success': False, 'message': str(e)}), 500
+    
+    
+    
+    
+    # Display inventory management dashboard
+@app.route('/custodian/inventory')
+@login_required
+def inventory_management():
+    try:
+        # Fetch categories and items from database
+        categories_response = supabase.table('categories').select('*').execute()
+        items_response = (
+            supabase
+            .table('items')
+            .select('*')
+            .order('name', desc=False)   # specify ascending order
+            .execute()
+        )        
+        categories = categories_response.data
+        items = items_response.data
+        
+        # Group items by category for easier rendering
+        items_by_category = {}
+        for category in categories:
+            category_id = category['id']
+            category_name = category['name']
+            items_by_category[category_id] = []
+            
+            for item in items:
+                if item['category_id'] == category_id:
+                    # Add image basename for loading images
+                    item['image_basename'] = item['name'].lower().replace(' ', '_')
+                    items_by_category[category_id].append(item)
+        
+        return render_template('custodian/inventory_management.html', 
+                              categories=categories, 
+                              items_by_category=items_by_category)
+    
+    except Exception as e:
+        print(f"Error fetching items: {e}")
+        return render_template('error.html', error='Unable to fetch items at this time')
+
+# API Routes for Items Management
+@app.route('/api/items/<item_id>', methods=['GET'])
+@login_required
+def get_item(item_id):
+    try:
+        # Fetch item data
+        item_response = supabase.table('items').select('*').eq('id', item_id).execute()
+        
+        if not item_response.data:
+            return jsonify({'success': False, 'message': 'Item not found'}), 404
+            
+        item = item_response.data[0]
+        
+        return jsonify(item), 200
+            
+    except Exception as e:
+        app.logger.error(f"Error fetching item: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/items/<item_id>', methods=['PUT'])
+@login_required
+def update_item(item_id):
+    try:
+        # Check if item exists
+        item_check = supabase.table('items').select('*').eq('id', item_id).execute()
+        if not item_check.data:
+            return jsonify({'success': False, 'message': 'Item not found'}), 404
+           
+        # Extract JSON data
+        data = request.json
+        
+        # Get existing item data to use as defaults
+        existing_item = item_check.data[0]
+        
+        # Use existing values as defaults if fields are not provided
+        item_name = data.get('item_name', existing_item['name'])
+        category_id = data.get('category_id', existing_item['category_id'])
+        total_quantity = data.get('total_quantity', existing_item['total_quantity'])
+        available_quantity = data.get('available_quantity', existing_item['available_quantity'])
+        status = data.get('status', existing_item['status'])
+       
+        # Validate data - now we only check if fields are valid, not if they're all provided
+        if available_quantity > total_quantity:
+            return jsonify({'success': False, 'message': 'Available quantity cannot exceed total quantity'}), 400
+       
+        # Create update data
+        update_data = {
+            'name': item_name,
+            'category_id': category_id,
+            'total_quantity': total_quantity,
+            'available_quantity': available_quantity,
+            'status': status,
+        }
+       
+        # Update in database
+        result = supabase.table('items').update(update_data).eq('id', item_id).execute()
+       
+        return jsonify({'success': True, 'message': 'Item updated successfully', 'item': result.data[0]}), 200
+           
+    except Exception as e:
+        app.logger.error(f"Error updating item: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+    
+    
 
 # Error handlers
 @app.errorhandler(404)

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory Management{% endblock %}
+
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token }}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="dashboard-container">
+    <h2>Inventory Management</h2>
+    <p>Manage laboratory equipment inventory.</p>
+
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="Search for equipment..." oninput="searchItems()">
+      <button class="btn" onclick="clearSearch()">Clear</button>
+    </div>
+
+    <!-- Items Display -->
+    <div id="items-container">
+      {% for category in categories %}
+        <div class="category-section" data-category-id="{{ category.id }}">
+          <h3 class="category-title">
+            <span class="toggle-icon">▼</span>{{ category.name }}
+          </h3>
+          {% if items_by_category[category.id]|length > 0 %}
+            <div class="items-grid">
+              {% for item in items_by_category[category.id] %}
+                <div class="item-card" data-item-id="{{ item.id }}" data-item-name="{{ item.name }}">
+                  <div class="item-image-container">
+                    <img class="item-image"
+                         src="{{ url_for('static', filename='img/' + category.name.lower() + '/' + item.image_basename + '.jpg') }}"
+                         onerror="tryNextImageFormat(this, '{{ item.image_basename }}', '{{ category.name }}');"
+                         alt="{{ item.name }}">
+                  </div>
+
+                  <div class="item-name">{{ item.name }}</div>
+
+                  {% if item.status == 'available' %}
+                    <div class="item-status status-available">Available</div>
+                  {% elif item.status == 'unavailable' %}
+                    <div class="item-status status-unavailable">Unavailable</div>
+                  {% else %}
+                    <div class="item-status status-maintenance">Under Maintenance</div>
+                  {% endif %}
+
+                  <div class="item-quantity">
+                    Available: <strong>{{ item.available_quantity }}</strong> / Total: {{ item.total_quantity }}
+                  </div>
+
+                  <div class="item-actions">
+                    <button class="btn" onclick="editItem('{{ item.id }}')">Edit</button>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="no-items-message">No items available in this category</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+    <div class="logout-container">
+      <a href="{{ url_for('custodian_dashboard') }}" class="btn">Back to Dashboard</a>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Item Modal -->
+<div id="edit-item-modal" class="modal">
+  <div class="modal-content">
+    <div class="form-preview-container">
+      <div class="form-header">
+        <h1>Edit Item</h1>
+      </div>
+      <form id="edit-item-form">
+        <input type="hidden" id="edit_item_id" name="item_id">
+        
+        <div class="form-row">
+          <div class="form-field">
+            <label for="edit_item_name">Item Name:</label>
+            <input type="text" id="edit_item_name" name="item_name" class="value-input" required>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-field">
+            <label for="edit_category_id">Category:</label>
+            <select id="edit_category_id" name="category_id" class="value-input" required>
+              {% for category in categories %}
+                <option value="{{ category.id }}">{{ category.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-field">
+            <label for="edit_available_quantity">Available Quantity:</label>
+            <input type="number" id="edit_available_quantity" name="available_quantity" class="value-input" min="0" required>
+          </div>
+          <div class="form-field">
+            <label for="edit_total_quantity">Total Quantity:</label>
+            <input type="number" id="edit_total_quantity" name="total_quantity" class="value-input" min="0" required>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-field">
+            <label for="edit_status">Status:</label>
+            <select id="edit_status" name="status" class="value-input" required>
+              <option value="available">Available</option>
+              <option value="unavailable">Unavailable</option>
+              <option value="under_maintenance">Under Maintenance</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="action-buttons">
+          <button type="button" class="btn btn-danger" onclick="closeEditItemModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

@@ -63,7 +63,7 @@ function showNotification(message, type = 'info') {
 // Try different image formats based on item category
 function tryNextImageFormat(imgElement, basename, category) {
   // Try these extensions in order
-  const extensions = ['jpg', 'jpeg', 'png', 'jfif', 'gif'];
+  const extensions = ['jpg', 'jpeg', 'png', 'jfif'];
   
   // Extract current extension from src
   const currentSrc = imgElement.src;
@@ -503,6 +503,161 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+
+
+
+
+
+
+
+
+
+// Simplified Inventory Management JavaScript
+
+// Edit item function
+function editItem(itemId) {
+  // Fetch item data
+  fetch(`/api/items/${itemId}`)
+    .then(response => response.json())
+    .then(item => {
+      // Populate edit form
+      document.getElementById('edit_item_id').value = item.id;
+      document.getElementById('edit_item_name').value = item.name;
+      document.getElementById('edit_category_id').value = item.category_id;
+      document.getElementById('edit_total_quantity').value = item.total_quantity;
+      document.getElementById('edit_available_quantity').value = item.available_quantity;
+      document.getElementById('edit_status').value = item.status;
+      
+      // Show modal
+      document.getElementById('edit-item-modal').style.display = 'block';
+    })
+    .catch(error => {
+      console.error('Error fetching item data:', error);
+      showNotification('Error loading item data', 'error');
+    });
+}
+
+// Close edit item modal
+function closeEditItemModal() {
+  const modal = document.getElementById('edit-item-modal');
+  modal.style.display = 'none';
+}
+
+
+// Get CSRF token for secure form submissions
+function getCsrfToken() {
+  return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+
+// Validate quantity relationship
+function validateQuantities(totalQuantity, availableQuantity) {
+  const total = parseInt(totalQuantity);
+  const available = parseInt(availableQuantity);
+  
+  if (isNaN(total) || isNaN(available)) {
+    return false;
+  }
+  
+  if (available > total) {
+    showNotification('Available quantity cannot exceed total quantity', 'error');
+    return false;
+  }
+  
+  return true;
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.textContent = message;
+  
+  document.body.appendChild(notification);
+  
+  // Show the notification
+  setTimeout(() => {
+    notification.classList.add('show');
+  }, 100);
+  
+  // Hide and remove the notification after 3 seconds
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 300);
+  }, 3000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('edit-item-form');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // Read values
+    const itemId = document.getElementById('edit_item_id').value;
+    const name = document.getElementById('edit_item_name').value.trim();
+    const categoryId = parseInt(document.getElementById('edit_category_id').value, 10);
+    const totalQty = parseInt(document.getElementById('edit_total_quantity').value, 10);
+    const availQty = parseInt(document.getElementById('edit_available_quantity').value, 10);
+    const status = document.getElementById('edit_status').value;
+
+    // Validate quantities
+    if (!validateQuantities(totalQty, availQty)) {
+      return;
+    }
+
+    // Build payload
+    const payload = {
+      item_name: name,
+      category_id: categoryId,
+      total_quantity: totalQty,
+      available_quantity: availQty,
+      status: status
+    };
+
+    try {
+      const res = await fetch(`/api/items/${itemId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': getCsrfToken()
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const body = await res.json();
+      if (!res.ok) {
+        throw new Error(body.message || 'Unknown error');
+      }
+
+      showNotification('Item updated successfully!', 'success');
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000); // 3000 milliseconds = 3 seconds
+      
+      closeEditItemModal();
+    } catch (err) {
+      console.error('Error updating item:', err);
+      showNotification(`Update failed: ${err.message}`, 'error');
+    }
+  });
+});
+
+// Close modal when clicking *literally* outside* the .modal-content
+window.onclick = function(event) {
+  const modal = document.getElementById('edit-item-modal');
+  // if the clicked element *is* the overlay (modal) itself, not its inner content
+  if (event.target === modal) {
+    closeEditItemModal();
+  }
+};
+
+
+
+
+
 
 
 
@@ -1116,7 +1271,12 @@ function setupDragAndDrop() {
 
 // Add CSS for the signature editor
 function addSignatureEditorStyles() {
+  // Check if styles are already added
+  if (document.getElementById('signature-editor-styles')) {
+    return;
+  }
   const styleSheet = document.createElement('style');
+  styleSheet.id = 'signature-editor-styles';
   styleSheet.textContent = `
     .signature-editor-controls {
       margin-top: 20px;
@@ -1301,27 +1461,46 @@ function addSignatureEditorStyles() {
   document.head.appendChild(styleSheet);
 }
 
-// Initialize the signature editor when the document is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialize your existing modal functionality
+// Conditionally initialize the signature editor on specific Flask routes
+function conditionallyInitializeSignatureEditor() {
+  // 1. Grab the pathname (e.g. "/borrower/items_display")
+  const currentPath = window.location.pathname.replace(/^\/|\/$/g, ''); 
+  //    → "borrower/items_display"
   
-  // Add the signature editor
-  initializeSignatureEditMode();
-  addSignatureEditorStyles();
+  // 2. Derive both the full path and just the filename
+  const fullPath = currentPath;                       
+  const filename = fullPath.substring(fullPath.lastIndexOf('/') + 1);
+  //    → "items_display"
   
-  // Setup drag and drop when needed
-  const observer = new MutationObserver(function(mutations) {
-    mutations.forEach(function(mutation) {
-      if (mutation.type === 'childList' && 
-          document.querySelector('.upload-area')) {
+  // 3. Define the routes/pages where the editor should load
+  const targetFullPaths = [
+    'borrower/items_display',        // your Flask route
+    'signature-page.html'            // if you ever need a literal .html match
+  ];
+  const targetFileNames = [
+    'items_display.html',            // in case you have static HTML
+    'signature-page.html'
+  ];
+  
+  // 4. Check if we're on a target page
+  if (targetFullPaths.includes(fullPath) || targetFileNames.includes(filename)) {
+    console.log('Initializing signature editor on target page:', fullPath || filename);
+    initializeSignatureEditMode();
+    addSignatureEditorStyles();
+    
+    // 5. Wait for the upload-area element to appear, then hook up drag-and-drop
+    const observer = new MutationObserver((mutations, obs) => {
+      if (document.querySelector('.upload-area')) {
         setupDragAndDrop();
-        observer.disconnect();
+        obs.disconnect();
       }
     });
-  });
-  
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-});
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+  } else {
+    console.log('Signature editor not loaded (not a target page):', fullPath);
+  }
+}
+
+// 6. Run on DOM ready
+document.addEventListener('DOMContentLoaded', conditionallyInitializeSignatureEditor);
