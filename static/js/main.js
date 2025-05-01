@@ -38,27 +38,6 @@ function showNotification(message, type = 'info') {
 let borrowingCart = [];
 let isCartVisible = true;
 
-// Function to show a toast notification
-function showNotification(message, type = 'info') {
-  const notification = document.createElement('div');
-  notification.className = `notification ${type}`;
-  notification.textContent = message;
-  
-  document.body.appendChild(notification);
-  
-  // Show the notification
-  setTimeout(() => {
-    notification.classList.add('show');
-  }, 100);
-  
-  // Hide and remove the notification after 3 seconds
-  setTimeout(() => {
-    notification.classList.remove('show');
-    setTimeout(() => {
-      document.body.removeChild(notification);
-    }, 300);
-  }, 3000);
-}
 
 // Try different image formats based on item category
 function tryNextImageFormat(imgElement, basename, category) {
@@ -401,94 +380,95 @@ function displayCartInModal() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const modal = document.getElementById('borrower-form-modal');
+  const modal     = document.getElementById('borrower-form-modal');
   const cancelBtn = document.getElementById('cancel-form');
   const submitBtn = document.getElementById('submit-form');
-  const form = document.getElementById('borrower-form');
+  const form      = document.getElementById('borrower-form');
+
   
+  if (!form || !submitBtn) {
+    console.warn('Form or submit button not found.');
+    return;
+  }
+
   // Close modal handler
-  cancelBtn?.addEventListener('click', () => modal.style.display = 'none');
-  
-  window.addEventListener('click', e => {
-    if (e.target === modal) modal.style.display = 'none';
+  cancelBtn?.addEventListener('click', () => {
+    modal.style.display = 'none';
   });
-  
-  // Form submission
-  submitBtn?.addEventListener('click', async (e) => {
-    e.preventDefault();
-    
+
+  window.addEventListener('click', e => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+
+  // Form submission handler
+  submitBtn.addEventListener('click', async (e) => {
+    e.preventDefault(); // 🔐 Prevent form from reloading the page
+
     // Basic form validation
-    const laboratory = document.querySelector('input[name="laboratory"]:checked');
+    const laboratory  = document.querySelector('input[name="laboratory"]:checked');
     const studentName = document.getElementById('student_name').value;
-    const subject = document.getElementById('subject').value;
-    const section = document.getElementById('section').value;
-    const dateNeeded = document.getElementById('date_needed').value;
-    
-    // Check required fields
+    const subject     = document.getElementById('subject').value;
+    const section     = document.getElementById('section').value;
+    const dateNeeded  = document.getElementById('date_needed').value;
+
     if (!laboratory) {
       showNotification('Please select a laboratory', 'error');
       return;
     }
-    
+
     if (!studentName) {
       showNotification('Please enter student name', 'error');
       return;
     }
-    
+
     if (!subject) {
       showNotification('Please enter subject', 'error');
       return;
     }
-    
+
     if (!section) {
       showNotification('Please enter section', 'error');
       return;
     }
-    
+
     if (!dateNeeded) {
       showNotification('Please enter date/time needed', 'error');
       return;
     }
-    
+
     const originalText = submitBtn.textContent;
     submitBtn.textContent = 'Processing...';
     submitBtn.disabled = true;
-    
+
     try {
       const formData = new FormData(form);
-      
-      // Add borrower_name to match backend expectation
       formData.append('borrower_name', studentName);
-      
-      // Add cart items to form data
       formData.append('items', JSON.stringify(borrowingCart));
-      
-      // Include session cookie & ask explicitly for JSON
+
       const resp = await fetch('/submit_borrowing_request', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Accept': 'application/json' },
         body: formData
       });
-      
-      // Parse JSON (and catch if server accidentally sent HTML)
+
       let result;
       try {
         result = await resp.json();
       } catch {
         throw new Error('Server returned invalid JSON.');
       }
-      
-      // Check for HTTP errors
+
       if (!resp.ok) {
         throw new Error(result.message || 'Server error occurred');
       }
-      
-      // Check for application‐level errors
+
       if (!result.success) {
         throw new Error(result.message);
       }
-      
+
       showNotification(result.message, 'success');
       borrowingCart = [];
       updateCartUI();
@@ -513,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-// Simplified Inventory Management JavaScript
+
 
 // Edit item function
 function editItem(itemId) {
@@ -567,27 +547,6 @@ function validateQuantities(totalQuantity, availableQuantity) {
   return true;
 }
 
-// Show notification
-function showNotification(message, type = 'info') {
-  const notification = document.createElement('div');
-  notification.className = `notification ${type}`;
-  notification.textContent = message;
-  
-  document.body.appendChild(notification);
-  
-  // Show the notification
-  setTimeout(() => {
-    notification.classList.add('show');
-  }, 100);
-  
-  // Hide and remove the notification after 3 seconds
-  setTimeout(() => {
-    notification.classList.remove('show');
-    setTimeout(() => {
-      document.body.removeChild(notification);
-    }, 300);
-  }, 3000);
-}
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('edit-item-form');
@@ -645,7 +604,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// Close modal when clicking *literally* outside* the .modal-content
+// Close modal .modal-content
 window.onclick = function(event) {
   const modal = document.getElementById('edit-item-modal');
   // if the clicked element *is* the overlay (modal) itself, not its inner content
@@ -666,7 +625,7 @@ window.onclick = function(event) {
 
 
 
-// Add this to your JavaScript file
+
 
 // Modal state management for edit mode
 let isEditMode = false;
@@ -687,11 +646,11 @@ function initializeSignatureEditMode() {
   editorControls.className = 'signature-editor-controls';
   editorControls.innerHTML = `
     <div class="editor-toolbar">
-      <button id="toggle-edit-mode" class="btn btn-primary">Enable Signature Mode</button>
+      <button id="toggle-edit-mode" class="btn btn-primary" type="button">Enable Signature Mode</button>
       <div id="editing-tools" style="display: none;">
-        <button id="add-signature" class="btn btn-secondary">Add Signature</button>
-        <button id="capture-signature" class="btn btn-secondary">Draw Signature</button>
-        <button id="exit-edit-mode" class="btn btn-danger">Exit Signature Mode</button>
+        <button id="add-signature" class="btn btn-secondary" type="button">Add Signature</button>
+        <button id="capture-signature" class="btn btn-secondary" type="button">Draw Signature</button>
+        <button id="exit-edit-mode" class="btn btn-danger" type="button">Exit Signature Mode</button>
       </div>
     </div>
     <div id="signature-editor-modal" class="signature-modal">
@@ -699,14 +658,14 @@ function initializeSignatureEditMode() {
         <span class="close-signature-modal">&times;</span>
         <h3>Create Your Signature</h3>
         <div class="signature-tabs">
-          <button class="signature-tab-btn active" data-tab="draw">Draw</button>
-          <button class="signature-tab-btn" data-tab="upload">Upload</button>
+          <button class="signature-tab-btn active" data-tab="draw" type="button">Draw</button>
+          <button class="signature-tab-btn" data-tab="upload" type="button">Upload</button>
         </div>
         <div id="draw-tab" class="signature-tab-content">
           <canvas id="signature-pad" width="400" height="200"></canvas>
           <div class="signature-pad-controls">
-            <button id="clear-pad" class="btn btn-secondary">Clear</button>
-            <button id="save-signature" class="btn btn-primary">Save Signature</button>
+            <button id="clear-pad" class="btn btn-secondary" type="button">Clear</button>
+            <button id="save-signature" class="btn btn-primary" type="button">Save Signature</button>
           </div>
         </div>
         <div id="upload-tab" class="signature-tab-content" style="display: none;">
@@ -717,7 +676,7 @@ function initializeSignatureEditMode() {
           <div class="signature-upload-preview">
             <img id="uploaded-signature-preview" style="display: none;">
           </div>
-          <button id="use-uploaded-signature" class="btn btn-primary" disabled>Use This Signature</button>
+          <button id="use-uploaded-signature" class="btn btn-primary" type="button" disabled>Use This Signature</button>
         </div>
       </div>
     </div>

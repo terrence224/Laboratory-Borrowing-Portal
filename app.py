@@ -73,8 +73,7 @@ def authorize():
         # Check if user exists in database and determine user type
         email = user_info.get('email')
         
-        # For simplicity, let's determine user type based on email domain
-        # In a real application, you would check against your database
+
         if email in config.ALLOWED_CUSTODIAN_EMAILS:
             session['user_type'] = 'custodian'
             return redirect(url_for('custodian_dashboard'))
@@ -146,7 +145,6 @@ def borrower_items_display():
 
 
 
-# Add this route to your app.py file
 
 @app.route('/submit_borrowing_request', methods=['POST'])
 @login_required
@@ -183,6 +181,13 @@ def submit_borrowing_request():
             return jsonify({'success': False, 'message': 'No items provided'}), 400
         items = json.loads(items_json)
 
+        user_email = session.get('user', {}).get('email')
+        if not user_email:
+            return jsonify({
+                'success': False,
+                'message': 'Cannot identify your email—please log in again'
+            }), 401
+        
         # 4) Build the borrowing_request record
         borrowing_data = {
             'laboratory':    laboratory,
@@ -192,7 +197,8 @@ def submit_borrowing_request():
             'section':       section,
             'date_filed':    date_filed,
             'date_needed':   date_needed,
-            'status':        'pending'
+            'status':        'pending',
+            'user_email':    user_email
         }
 
         # 5) Insert the borrowing request, catching any Supabase/API errors
@@ -229,7 +235,11 @@ def submit_borrowing_request():
     
     
     
-    # Display inventory management dashboard
+
+
+
+
+
 @app.route('/custodian/inventory')
 @login_required
 def inventory_management():
