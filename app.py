@@ -303,6 +303,7 @@ def borrower_history():
 def get_borrowing_request(request_id):
     try:
         user_email = session['user']['email']
+        user_type  = session.get('user_type', 'borrower')
 
         # Fetch the specific borrowing request
         resp = (
@@ -317,7 +318,7 @@ def get_borrowing_request(request_id):
             return jsonify({'success': False, 'message': 'Request not found'})
 
         request_data = data_list[0]
-        if request_data['user_email'] != user_email:
+        if user_type != 'custodian' and request_data['user_email'] != user_email:
             return jsonify({'success': False, 'message': 'Unauthorized access'})
 
         # Fetch items linked to this request
@@ -370,6 +371,7 @@ def get_borrowing_request(request_id):
 def delete_borrowing_request(request_id):
     try:
         user_email = session['user']['email']
+        user_type  = session.get('user_type', 'borrower')
 
         # 1. Verify the request belongs to the current user
         resp = (
@@ -380,7 +382,7 @@ def delete_borrowing_request(request_id):
             .execute()
         )
         records = resp.data
-        if not records or records[0]['user_email'] != user_email:
+        if user_type != 'custodian' and (not records or records[0]['user_email'] != user_email):
             return jsonify({'success': False, 'message': 'Unauthorized or not found'}), 403
 
         # 2. Delete child items first
@@ -511,6 +513,108 @@ def update_item(item_id):
         app.logger.error(f"Error updating item: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+
+@app.route('/custodian/approval')
+@login_required
+def borrower_approval():
+    try:
+
+        resp = (
+            supabase
+            .table('borrowing_requests')
+            .select('*')
+            .order('id', desc=True)
+            .execute()
+        )
+        # NO parentheses here:
+        borrowing_requests = resp.data
+
+        for req in borrowing_requests:
+            items_resp = (
+                supabase
+                .table('borrowing_items')
+                .select('*, items(id, name)')
+                .eq('borrowing_id', req['id'])
+                .execute()
+            )
+            raw_items = items_resp.data
+
+            items = []
+            for bi in raw_items:
+                item = bi['items']
+                items.append({
+                    'id': item['id'],
+                    'name': item['name'],
+                    'quantity': bi['quantity'],
+                    'broken': bi.get('broken_qty', 0),
+                    'lost': bi.get('lost_qty', 0),
+                    'returned_quantity': bi.get('returned_qty', 0),
+                    'remarks': bi.get('remarks', '')
+                })
+
+            req['items'] = items
+            req['date_filed']  = datetime.strptime(req['date_filed'], '%Y-%m-%d').date()
+            req['date_needed'] = datetime.strptime(req['date_needed'], '%Y-%m-%dT%H:%M:%S')
+
+        return render_template(
+            'custodian/borrower_approval.html',
+            borrowing_requests=borrowing_requests
+        )
+
+    except Exception as e:
+        print(f"Error fetching borrowing history: {e}", file=sys.stderr)
+        traceback.print_exc()
+        return render_template('error.html',
+                               error='Unable to fetch borrowing history at this time')
+
+
+    
+    
+@app.route('/api/borrowing_request/<int:request_id>', methods=['PUT'])
+@login_required
+def update_borrowing_request(request_id):
+    user_type = session.get('user_type')
+    if user_type != 'custodian':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    payload = request.get_json() or {}
+    new_status = payload.get('status')
+    if new_status not in ('pending','approved','rejected','returned'):
+        return jsonify({'success': False, 'message': 'Invalid status'}), 400
+
+    try:
+        # update only the status field
+        supabase.table('borrowing_requests') \
+                .update({'status': new_status}) \
+                .eq('id', request_id) \
+                .execute()
+        return jsonify({'success': True})
+    except Exception as e:
+        current_app.logger.error(f"Error updating status: {e}")
+        return jsonify({'success': False, 'message': 'Server error'}), 500
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
 

@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% block title %}Borrowing History - Laboratory Borrowing System{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="dashboard-container">
+    <h2>My Borrowing History</h2>
+    
+    <div class="search-bar">
+      <input type="text" id="search-history" placeholder="Search by item name, laboratory, or date...">
+    </div>
+    
+    <div class="history-grid">
+      {% if borrowing_requests %}
+        {% for request in borrowing_requests %}
+          <div class="history-card" data-laboratory="{{ request.laboratory }}" data-date="{{ request.date_filed }}">
+            <div class="history-card-header">
+                <span class="request-id">#{{ loop.revindex }}</span>
+                <span class="request-date">{{ request.date_filed }}</span>
+              
+                {% if session.get('user_type') == 'custodian' %}
+                  <select class="status-editor" data-request-id="{{ request.id }}">
+                    {% for s in ['pending','approved','rejected','returned'] %}
+                      <option value="{{ s }}" {% if s == request.status %}selected{% endif %}>
+                        {{ s|capitalize }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                {% else %}
+                  <span class="status-badge status-{{ request.status }}">{{ request.status }}</span>
+                {% endif %}
+            </div>
+            <div class="history-card-body">
+              <div class="request-detail">
+                <strong>Laboratory:</strong> {{ request.laboratory }}
+              </div>
+              <div class="request-detail">
+                <strong>Date Needed:</strong> {{ request.date_needed.strftime('%Y-%m-%d %H:%M') }}
+              </div>
+              <div class="request-detail">
+                <strong>Subject/Section:</strong> {{ request.subject }}/{{ request.section }}
+              </div>
+              <div class="items-summary">
+                <strong>Items:</strong>
+                <ul>
+                  {% for item in request['items'] %}
+                    {{ item.name }} (qty: {{ item.quantity }})<br>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+            <div class="history-card-footer">
+              <button class="btn btn-danger delete-request-btn" data-request-id="{{ request.id }}">Delete</button>
+              <button class="btn btn-primary show-details-btn" data-request-id="{{ request.id }}">View Details</button>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="no-history-message">
+          <p>You don't have any borrowing requests yet.</p>
+        </div>
+      {% endif %}
+    </div>
+    <div class="logout-container">
+      <a href="{{ url_for('borrower_dashboard') }}" class="btn">Back to Dashboard</a>
+    </div>
+  </div>
+</div>
+
+
+<!-- Include the borrower form modal -->
+{% include 'partials/borrower_form_modal.html' %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Search functionality
+  const searchInput = document.getElementById('search-history');
+  const historyCards = document.querySelectorAll('.history-card');
+  
+  searchInput.addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    
+    historyCards.forEach(card => {
+      const cardText = card.textContent.toLowerCase();
+      if (cardText.includes(searchTerm)) {
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  });
+  
+  // View Details Button Click Handler
+  const detailButtons = document.querySelectorAll('.show-details-btn');
+  
+  detailButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const requestId = this.getAttribute('data-request-id');
+      
+      // Fetch the request details
+      fetch(`/api/borrowing_request/${requestId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            displayBorrowerForm(data.request);
+          } else {
+            showNotification(data.message, 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching request details:', error);
+          showNotification('Failed to load request details', 'error');
+        });
+    });
+  });
+
+  const deleteButtons = document.querySelectorAll('.delete-request-btn');
+
+  deleteButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const requestId = this.getAttribute('data-request-id');
+      if (!confirm(`Are you sure you want to delete request #${requestId}?`)) return;
+
+      fetch(`/api/borrowing_request/${requestId}`, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            const card = document.querySelector(`.history-card[data-request-id="${requestId}"]`);
+            if (card) card.remove();
+            showNotification('Request deleted successfully', 'success');
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          } else {
+            showNotification(data.message || 'Delete failed', 'error');
+          }
+        })
+        .catch(err => {
+          console.error('Error deleting request:', err);
+          showNotification('Error deleting request', 'error');
+        });
+    });
+  });
+    
+  function displayBorrowerForm(request) {
+    // Set form to read-only mode
+    const form = document.getElementById('borrower-form');
+    const allInputs = form.querySelectorAll('input, select');
+    allInputs.forEach(input => {
+      input.readOnly = true;
+      if (input.type === 'radio') {
+        input.disabled = true;
+      }
+    });
+    
+    // Fill in the form data
+    // Laboratory selection
+    const labRadio = document.querySelector(`input[name="laboratory"][value="${request.laboratory}"]`);
+    if (labRadio) {
+      labRadio.checked = true;
+    }
+    
+    // Basic info
+    document.getElementById('student_name').value = request.borrower_name;
+    document.getElementById('faculty_name').value = request.faculty_name;
+    document.getElementById('date_filed').value = request.date_filed;
+    document.getElementById('subject').value = request.subject;
+    document.getElementById('section').value = request.section;
+    document.getElementById('date_needed').value = formatDateTimeForInput(request.date_needed);
+    
+    // Populate items table
+    const itemsTableBody = document.getElementById('items-table-body');
+    itemsTableBody.innerHTML = '';
+    
+    request.items.forEach(item => {
+      const row = document.createElement('tr');
+      
+      // Create table cells with appropriate data
+      row.innerHTML = `
+        <td>${item.name}</td>
+        <td>${item.quantity}</td>
+        <td>${request.status === 'approved' ? 'Signed' : ''}</td>
+        <td>${request.status === 'approved' ? 'Signed' : ''}</td>
+        <td>${request.status === 'approved' ? 'Signed' : ''}</td>
+        <td>${request.status === 'returned' ? request.return_date : ''}</td>
+        <td>${request.status === 'returned' ? request.return_time : ''}</td>
+        <td>${item.broken}</td>
+        <td>${item.lost}</td>
+        <td>${request.status === 'returned' ? item.returned_quantity : ''}</td>
+        <td>${item.remarks || ''}</td>
+      `;
+      
+      itemsTableBody.appendChild(row);
+    });
+    
+    // Update action buttons
+    const actionButtons = document.querySelector('.action-buttons');
+    actionButtons.innerHTML = '<button type="button" class="btn btn-primary" id="close-form">Close</button>';
+    
+    document.getElementById('close-form').addEventListener('click', function() {
+      document.getElementById('borrower-form-modal').style.display = 'none';
+    });
+    
+    // Show the modal
+    document.getElementById('borrower-form-modal').style.display = 'block';
+  }
+  
+  function formatDateTimeForInput(dateTimeStr) {
+    // Convert date string to format required by datetime-local input
+    const date = new Date(dateTimeStr);
+    return date.toISOString().slice(0, 16);
+  }
+  
+  function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Show notification
+    setTimeout(() => {
+      notification.classList.add('show');
+    }, 10);
+    
+    // Hide and remove notification after 3 seconds
+    setTimeout(() => {
+      notification.classList.remove('show');
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 300);
+    }, 3000);
+  }
+  
+  // Close modal when clicking outside
+  window.addEventListener('click', function(event) {
+    const modal = document.getElementById('borrower-form-modal');
+    if (event.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+  
+  // Cancel button handler
+  document.getElementById('cancel-form').addEventListener('click', function() {
+    document.getElementById('borrower-form-modal').style.display = 'none';
+  });
+});
+
+
+const statusEditors = document.querySelectorAll('.status-editor');
+
+statusEditors.forEach(sel => {
+  sel.addEventListener('change', function() {
+    const newStatus = this.value;
+    const reqId     = this.getAttribute('data-request-id');
+
+    fetch(`/api/borrowing_request/${reqId}`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ status: newStatus })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showNotification(`Status updated to ${newStatus}`, 'success');
+      } else {
+        showNotification(data.message || 'Update failed', 'error');
+      }
+    })
+    .catch(err => {
+      console.error('Error updating status:', err);
+      showNotification('Error updating status', 'error');
+    });
+  });
+});
+</script>
+{% endblock %}
