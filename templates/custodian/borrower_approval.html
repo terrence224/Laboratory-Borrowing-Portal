@@ -183,13 +183,13 @@ document.addEventListener('DOMContentLoaded', function() {
       row.innerHTML = `
         <td>${item.name}</td>
         <td>${item.quantity}</td>
-        <td>${request.status === 'approved' ? 'Signed' : ''}</td>
-        <td>${request.status === 'approved' ? 'Signed' : ''}</td>
-        <td>${request.status === 'approved' ? 'Signed' : ''}</td>
+        <td></td>
+        <td></td>
+        <td></td>
         <td>${request.status === 'returned' ? request.return_date : ''}</td>
         <td>${request.status === 'returned' ? request.return_time : ''}</td>
-        <td>${item.broken}</td>
-        <td>${item.lost}</td>
+        <td></td>
+        <td></td>
         <td>${request.status === 'returned' ? item.returned_quantity : ''}</td>
         <td>${item.remarks || ''}</td>
       `;
