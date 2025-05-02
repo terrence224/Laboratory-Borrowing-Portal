@@ -1,0 +1,140 @@
+
+
+
+
+{% block content %}
+
+<!-- templates/borrow_modal.html -->
+<div id="borrower-form-modal" class="modal">
+  <div class="modal-content">
+    <div class="form-preview-container">
+      <form id="borrower-form">
+        <div class="form-header">
+          <div class="form-id">F-COL-004<br>06-15-2013</div>
+          <h1>JOSÉ RIZAL UNIVERSITY</h1>
+          <h2>COLLEGE LABORATORY BORROWER'S FORM</h2>
+        </div>
+        
+        <!-- Updated Laboratory section to be one continuous line -->
+        <div class="form-section">
+          <div class="laboratory-section">
+            <span class="lab-label">LABORATORY:</span>
+            <div class="checkbox-group">
+              <div class="checkbox-item">
+                <label class="checkbox-container">
+                  <input type="radio" name="laboratory" value="Electronics" required>
+                  <span id="lab-electronics" class="checkbox-box"></span>
+                  <span class="checkbox-label">Electronics</span>
+                </label>
+              </div>
+              <div class="checkbox-item">
+                <label class="checkbox-container">
+                  <input type="radio" name="laboratory" value="Science" required>
+                  <span id="lab-science" class="checkbox-box"></span>
+                  <span class="checkbox-label">Science</span>
+                </label>
+              </div>
+              <div class="checkbox-item">
+                <label class="checkbox-container">
+                  <input type="radio" name="laboratory" value="Nursing" required>
+                  <span id="lab-nursing" class="checkbox-box"></span>
+                  <span class="checkbox-label">Nursing</span>
+                </label>
+              </div>
+              <div class="checkbox-item">
+                <label class="checkbox-container">
+                  <input type="radio" name="laboratory" value="HTM" required>
+                  <span id="lab-htm" class="checkbox-box"></span>
+                  <span class="checkbox-label">HTM</span>
+                </label>
+              </div>
+              <div class="checkbox-item">
+                <label class="checkbox-container">
+                  <input type="radio" name="laboratory" value="Criminology" required>
+                  <span id="lab-criminology" class="checkbox-box"></span>
+                  <span class="checkbox-label">Criminology</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Updated form fields to show labels inline with inputs -->
+        <div class="form-section">
+          <div class="form-row">
+            <div class="form-field">
+              <label for="borrower_name">NAME OF STUDENT/FACULTY:</label>
+              <div class="split-field">
+                <input type="text" id="student_name" name="student_name" class="value-input" placeholder="Student Name" required>
+                <span class="field-separator">/</span>
+                <input type="text" id="faculty_name" name="faculty_name" class="value-input" placeholder="Faculty Name">
+              </div>
+            </div>
+            <div class="form-field">
+              <label for="date_filed">DATE FILED:</label>
+              <input type="date" id="date_filed" name="date_filed" class="value-input" readonly required>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-field">
+              <label for="subject_section">SUBJECT/SECTION:</label>
+              <div class="split-field">
+                <input type="text" id="subject" name="subject" class="value-input" placeholder="Subject" required>
+                <span class="field-separator">/</span>
+                <input type="text" id="section" name="section" class="value-input" placeholder="Section" required>
+              </div>
+            </div>
+            <div class="form-field">
+              <label for="date_needed">DATE/TIME NEEDED:</label>
+              <input type="datetime-local" id="date_needed" name="date_needed" class="value-input" required>
+            </div>
+          </div>
+        </div>
+      
+        <div class="form-section">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th rowspan="3" style="width: 200px;">ITEM</th>
+                <th colspan="4">RELEASED</th>
+                <th colspan="7">RETURNED</th>
+              </tr>
+              <tr>
+                <th rowspan="2" style="width: 50px;">QUANTITY</th>
+                <th colspan="3">SIGNATURE</th>
+                <th rowspan="2" style="width: 80px;">DATE</th>
+                <th rowspan="2" style="width: 80px;">TIME</th>
+                <th colspan="3"></th>
+                <th rowspan="2">REMARKS</th>
+              </tr>
+              <tr>
+                <th style="width: 100px;">STUDENT</th>
+                <th style="width: 100px;">FACULTY</th>
+                <th style="width: 100px;">CUSTODIAN</th>
+                <th style="width: 90px;">BROKEN</th>
+                <th style="width: 90px;">LOST</th>
+                <th style="width: 90px;">QUANTITY</th>
+              </tr>
+            </thead>
+            <tbody id="items-table-body">
+              <!-- Items will be populated here dynamically -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="action-buttons">
+          <button type="button" class="btn btn-danger" id="cancel-form">Cancel</button>
+          <button type="button" class="btn btn-primary" id="submit-form">Submit Request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

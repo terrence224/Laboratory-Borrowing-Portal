@@ -820,3 +820,146 @@ table.items-table th {
   pointer-events: none; /* Image itself shouldn’t intercept drag events */
   user-select: none;
 }
+
+
+
+
+
+
+
+
+
+
+/* Borrowing History Styles */
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.history-card {
+  background: var(--white);
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+}
+
+.history-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.history-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background-color: var(--light-blue);
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.request-id {
+  font-weight: bold;
+  color: var(--primary-blue);
+}
+
+.request-date {
+  font-size: 14px;
+  color: var(--dark-gray);
+}
+
+.status-badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.status-pending {
+  background-color: #fff8e1;
+  color: #f57c00;
+}
+
+.status-approved {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-rejected {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.status-returned {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.history-card-body {
+  padding: 15px;
+}
+
+.request-detail {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.items-summary {
+  margin-top: 12px;
+}
+
+.items-summary ul {
+  margin: 5px 0 0 0;
+  padding-left: 20px;
+  font-size: 14px;
+}
+
+.items-summary li {
+  margin-bottom: 3px;
+}
+
+.history-card-footer {
+  padding: 10px 15px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.delete-request-btn {
+  font-size: 14px;
+  margin-right: auto;
+}
+
+.show-details-btn {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+.no-history-message {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px;
+  color: var(--dark-gray);
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .history-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .history-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .status-badge {
+    align-self: flex-end;
+  }
+}

@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from functools import wraps
 from supabase import create_client, Client
 import config
+import traceback
+import sys
 
 app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
@@ -235,6 +237,175 @@ def submit_borrowing_request():
     
     
     
+
+
+
+
+@app.route('/borrower/history')
+@login_required
+def borrower_history():
+    try:
+        user_email = session['user']['email']
+
+        resp = (
+            supabase
+            .table('borrowing_requests')
+            .select('*')
+            .eq('user_email', user_email)
+            .order('id', desc=True)
+            .execute()
+        )
+        # NO parentheses here:
+        borrowing_requests = resp.data
+
+        for req in borrowing_requests:
+            items_resp = (
+                supabase
+                .table('borrowing_items')
+                .select('*, items(id, name)')
+                .eq('borrowing_id', req['id'])
+                .execute()
+            )
+            raw_items = items_resp.data
+
+            items = []
+            for bi in raw_items:
+                item = bi['items']
+                items.append({
+                    'id': item['id'],
+                    'name': item['name'],
+                    'quantity': bi['quantity'],
+                    'broken': bi.get('broken_qty', 0),
+                    'lost': bi.get('lost_qty', 0),
+                    'returned_quantity': bi.get('returned_qty', 0),
+                    'remarks': bi.get('remarks', '')
+                })
+
+            req['items'] = items
+            req['date_filed']  = datetime.strptime(req['date_filed'], '%Y-%m-%d').date()
+            req['date_needed'] = datetime.strptime(req['date_needed'], '%Y-%m-%dT%H:%M:%S')
+
+        return render_template(
+            'borrower/borrowing_history.html',
+            borrowing_requests=borrowing_requests
+        )
+
+    except Exception as e:
+        print(f"Error fetching borrowing history: {e}", file=sys.stderr)
+        traceback.print_exc()
+        return render_template('error.html',
+                               error='Unable to fetch borrowing history at this time')
+
+
+
+@app.route('/api/borrowing_request/<int:request_id>')
+@login_required
+def get_borrowing_request(request_id):
+    try:
+        user_email = session['user']['email']
+
+        # Fetch the specific borrowing request
+        resp = (
+            supabase
+            .table('borrowing_requests')
+            .select('*')
+            .eq('id', request_id)
+            .execute()
+        )
+        data_list = resp.data          
+        if not data_list:
+            return jsonify({'success': False, 'message': 'Request not found'})
+
+        request_data = data_list[0]
+        if request_data['user_email'] != user_email:
+            return jsonify({'success': False, 'message': 'Unauthorized access'})
+
+        # Fetch items linked to this request
+        items_resp = (
+            supabase
+            .table('borrowing_items')
+            .select('*, items(id, name)')
+            .eq('borrowing_id', request_id)
+            .execute()
+        )
+        raw_items = items_resp.data      
+
+        # Process items to simplify structure
+        items = []
+        for bi in raw_items:
+            item = bi['items']
+            items.append({
+                'id':               item['id'],
+                'name':             item['name'],
+                'quantity':         bi['quantity'],
+                'broken':           bi.get('broken_qty', 0),
+                'lost':             bi.get('lost_qty', 0),
+                'returned_quantity': bi.get('returned_qty', 0),
+                'remarks':          bi.get('remarks', '')
+            })
+
+        request_data['items'] = items
+
+        # If returned, add placeholder return info
+        return_info = {}
+        if request_data.get('status') == 'returned':
+            now = datetime.now()
+            return_info = {
+                'return_date': now.strftime('%Y-%m-%d'),
+                'return_time': now.strftime('%H:%M')
+            }
+
+        return jsonify({
+            'success': True,
+            'request': {**request_data, **return_info}
+        })
+
+    except Exception as e:
+        print(f"Error fetching request details: {e}", file=sys.stderr)
+        return jsonify({'success': False, 'message': f'Error fetching request details: {str(e)}'})
+
+
+@app.route('/api/borrowing_request/<int:request_id>', methods=['DELETE'])
+@login_required
+def delete_borrowing_request(request_id):
+    try:
+        user_email = session['user']['email']
+
+        # 1. Verify the request belongs to the current user
+        resp = (
+            supabase
+            .table('borrowing_requests')
+            .select('user_email')
+            .eq('id', request_id)
+            .execute()
+        )
+        records = resp.data
+        if not records or records[0]['user_email'] != user_email:
+            return jsonify({'success': False, 'message': 'Unauthorized or not found'}), 403
+
+        # 2. Delete child items first
+        items_del = (
+            supabase
+            .table('borrowing_items')
+            .delete()
+            .eq('borrowing_id', request_id)
+            .execute()
+        )
+
+        # 3. Delete the main request row
+        req_del = (
+            supabase
+            .table('borrowing_requests')
+            .delete()
+            .eq('id', request_id)
+            .execute()
+        )
+
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error deleting borrowing request: {e}", file=sys.stderr)
+        return jsonify({'success': False, 'message': 'Server error'}), 500
+
 
 
 
