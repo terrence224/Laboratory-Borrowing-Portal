@@ -579,38 +579,165 @@ def borrower_approval():
                                error='Unable to fetch borrowing history at this time')
 
 
-    
-    
+
+
+
+
+
+
+
 @app.route('/api/borrowing_request/<int:request_id>', methods=['PUT'])
 @login_required
 def update_borrowing_request(request_id):
+    """
+    Update the status of a borrowing request and manage inventory accordingly.
+    
+    Status transitions affect inventory as follows:
+    - pending/rejected → approved: Decrease available inventory
+    - approved → pending/rejected/returned: Increase available inventory
+    - returned → approved: Decrease inventory (edge case)
+    """
     user_type = session.get('user_type')
     if user_type != 'custodian':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
-
+        
     payload = request.get_json() or {}
     new_status = payload.get('status')
-    if new_status not in ('pending','approved','rejected','returned'):
+    
+    if new_status not in ('pending', 'approved', 'rejected', 'returned'):
         return jsonify({'success': False, 'message': 'Invalid status'}), 400
-
+        
     try:
-        # update only the status field
-        supabase.table('borrowing_requests') \
-                .update({'status': new_status}) \
-                .eq('id', request_id) \
-                .execute()
-        return jsonify({'success': True})
+        # Get current status
+        current_request = supabase.table('borrowing_requests') \
+            .select('status') \
+            .eq('id', request_id) \
+            .execute()
+            
+        if not current_request.data or len(current_request.data) == 0:
+            return jsonify({'success': False, 'message': 'Request not found'}), 404
+            
+        current_status = current_request.data[0]['status']
+        
+        # Skip if no change
+        if current_status == new_status:
+            return jsonify({'success': True, 'message': 'No change in status'})
+        
+        # Process inventory changes based on status transition
+        inventory_updated = False
+        
+        if (current_status in ['pending', 'rejected'] and new_status == 'approved') or \
+           (current_status == 'approved' and new_status in ['pending', 'rejected', 'returned']) or \
+           (current_status == 'returned' and new_status == 'approved'):
+            
+            try:
+                # Retrieve the items associated with this request
+                requested_items_result = supabase.table('borrowing_items') \
+                    .select('item_id, quantity') \
+                    .eq('borrowing_id', request_id) \
+                    .execute()
+                
+                for item in requested_items_result.data:
+                    # Determine quantity change direction
+                    if current_status in ['pending', 'rejected'] and new_status == 'approved':
+                        # Decrease inventory when approving
+                        update_item_quantity(item['item_id'], -item['quantity'])
+                    elif current_status == 'approved' and new_status in ['pending', 'rejected', 'returned']:
+                        # Increase inventory when un-approving or returning
+                        update_item_quantity(item['item_id'], item['quantity'])
+                    elif current_status == 'returned' and new_status == 'approved':
+                        # Double decrease for the edge case (returned → approved)
+                        # This should be rare but handle it anyway
+                        update_item_quantity(item['item_id'], -2 * item['quantity'])
+                
+                inventory_updated = True
+            except Exception as inventory_error:
+                print(f"WARNING: Error updating inventory: {inventory_error}")
+                # Continue to at least update the status
+        
+        # Update the status
+        update_result = supabase.table('borrowing_requests') \
+            .update({'status': new_status}) \
+            .eq('id', request_id) \
+            .execute()
+            
+        # Add timestamp for returned items
+        if new_status == 'returned':
+            try:
+                now = datetime.now()
+                supabase.table('borrowing_requests') \
+                    .update({
+                        'return_date': now.strftime('%Y-%m-%d'),
+                        'return_time': now.strftime('%H:%M:%S')
+                    }) \
+                    .eq('id', request_id) \
+                    .execute()
+            except Exception as return_error:
+                # Return date/time columns might not exist - continue anyway
+                print(f"Note: Couldn't update return timestamp: {return_error}")
+            
+        message = f'Status updated from {current_status} to {new_status}'
+        if not inventory_updated:
+            message += ' (inventory not updated)'
+            
+        return jsonify({'success': True, 'message': message})
+            
     except Exception as e:
-        current_app.logger.error(f"Error updating status: {e}")
-        return jsonify({'success': False, 'message': 'Server error'}), 500
-
+        print(f"Error updating status: {e}")
+        return jsonify({'success': False, 'message': f'Server error: {str(e)}'}), 500
+        
+def update_item_quantity(item_id, quantity_change):
+    """
+    Update the available quantity of an item.
     
-    
-    
-    
-    
-    
-    
+    Args:
+        item_id: The ID of the item to update
+        quantity_change: The amount to change by (positive to add, negative to subtract)
+    """
+    try:
+        # Get current item data
+        item_result = supabase.table('items') \
+            .select('available_quantity, status') \
+            .eq('id', item_id) \
+            .execute()
+            
+        if not item_result.data or len(item_result.data) == 0:
+            print(f"Item not found: ID {item_id}")
+            return False
+            
+        current_quantity = item_result.data[0]['available_quantity']
+        current_status = item_result.data[0]['status']
+        new_quantity = current_quantity + quantity_change
+        
+        # Ensure we don't go below zero
+        if new_quantity < 0:
+            print(f"Cannot reduce item ID {item_id} below 0 (attempted: {new_quantity})")
+            new_quantity = 0
+            
+        # Update the quantity
+        supabase.table('items') \
+            .update({'available_quantity': new_quantity}) \
+            .eq('id', item_id) \
+            .execute()
+            
+        # Update status if needed
+        new_status = current_status
+        if new_quantity == 0 and current_status == 'available':
+            new_status = 'unavailable'
+        elif new_quantity > 0 and current_status == 'unavailable':
+            new_status = 'available'
+            
+        if new_status != current_status:
+            supabase.table('items') \
+                .update({'status': new_status}) \
+                .eq('id', item_id) \
+                .execute()
+                
+        return True
+        
+    except Exception as e:
+        print(f"Error updating item quantity for ID {item_id}: {e}")
+        return False
     
     
     
