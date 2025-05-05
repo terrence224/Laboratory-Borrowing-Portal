@@ -4,13 +4,12 @@
 
 {% block content %}
 <div class="dashboard-container">
-    <h2>Welcome, Laboratory Custodian</h2>
-    <p>This is the custodian dashboard. More features will be added in future steps.</p>
+    <h2>Welcome, {{ session.user.given_name }} Custodian</h2>
+    <p>This is the custodian dashboard.</p>
     
     <div class="dashboard-actions">
         <a href="{{ url_for('inventory_management') }}" class="btn">Inventory Management</a>
         <a href="{{ url_for('borrower_approval') }}" class="btn">Request Approvals</a>
-        <a href="#" class="btn">Borrowing Tracking</a>
     </div>
     
     <div class="logout-container">

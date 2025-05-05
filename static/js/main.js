@@ -1434,11 +1434,11 @@ function conditionallyInitializeSignatureEditor() {
   // 3. Define the routes/pages where the editor should load
   const targetFullPaths = [
     'borrower/items_display',        // your Flask route
-    'signature-page.html'            // if you ever need a literal .html match
+    'custodian/approval'            // if you ever need a literal .html match
   ];
   const targetFileNames = [
     'items_display.html',            // in case you have static HTML
-    'signature-page.html'
+    'borrower_approval.html'
   ];
   
   // 4. Check if we're on a target page

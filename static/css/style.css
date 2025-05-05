@@ -963,3 +963,90 @@ table.items-table th {
     align-self: flex-end;
   }
 }
+
+
+
+
+
+
+/* Status Dropdown Styles */
+.status-editor {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  border: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%23333' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 5px center;
+  background-size: 12px;
+  cursor: pointer;
+  padding-right: 20px;
+  transition: background-color 0.2s;
+}
+
+/* Different status colors for dropdown */
+.status-editor option[value="pending"] {
+  background-color: #fff8e1;
+  color: #f57c00;
+}
+
+.status-editor option[value="approved"] {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-editor option[value="rejected"] {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.status-editor option[value="returned"] {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+/* Styling the select based on its current value */
+.status-editor[data-current-status="pending"] {
+  background-color: #fff8e1;
+  color: #f57c00;
+}
+
+.status-editor[data-current-status="approved"] {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-editor[data-current-status="rejected"] {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.status-editor[data-current-status="returned"] {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+/* Focus state */
+.status-editor:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.5);
+}
+
+/* Hover state */
+.status-editor:hover {
+  opacity: 0.9;
+}
+
+/* Media query for smaller screens */
+@media (max-width: 768px) {
+  .status-editor {
+    align-self: flex-end;
+    width: 100%;
+    max-width: 150px;
+  }
+}

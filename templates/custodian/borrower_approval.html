@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container">
   <div class="dashboard-container">
-    <h2>My Borrowing History</h2>
+    <h2>Borrower Approvals</h2>
     
     <div class="search-bar">
       <input type="text" id="search-history" placeholder="Search by item name, laboratory, or date...">
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <td>${request.status === 'returned' ? request.return_time : ''}</td>
         <td></td>
         <td></td>
-        <td>${request.status === 'returned' ? item.returned_quantity : ''}</td>
+        <td></td>
         <td>${item.remarks || ''}</td>
       `;
       
@@ -274,6 +274,28 @@ statusEditors.forEach(sel => {
     .catch(err => {
       console.error('Error updating status:', err);
       showNotification('Error updating status', 'error');
+    });
+  });
+});
+
+
+// Apply the correct data attribute for styling based on selected value
+document.addEventListener('DOMContentLoaded', function() {
+  const statusDropdowns = document.querySelectorAll('.status-editor');
+  
+  // Set initial data attributes
+  statusDropdowns.forEach(dropdown => {
+    dropdown.setAttribute('data-current-status', dropdown.value);
+  });
+  
+  // Update data attribute when selection changes
+  statusDropdowns.forEach(dropdown => {
+    dropdown.addEventListener('change', function() {
+      this.setAttribute('data-current-status', this.value);
+      
+      const requestId = this.getAttribute('data-request-id');
+      console.log(`Status for request #${requestId} updated to: ${this.value}`);
+    
     });
   });
 });

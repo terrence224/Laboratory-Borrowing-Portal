@@ -5,7 +5,7 @@
 {% block content %}
 <div class="dashboard-container">
     <h2>Welcome, {{ session.user.given_name }}</h2>
-    <p>This is the borrower dashboard. More features will be added in future steps.</p>
+    <p>This is the borrower dashboard.</p>
     
     <div class="dashboard-actions">
         <a href="{{ url_for('borrower_items_display') }}" class="btn">View Available Items</a>
